@@ -2,8 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Крестики-нолики — Мультиплеер P2P</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Видео мессенджер | Чат + Звонки</title>
+    <!-- PeerJS библиотека -->
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,961 +15,588 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: linear-gradient(135deg, #1e1e2f, #2a2a40);
             color: #fff;
+            min-height: 100vh;
+            padding: 20px;
         }
 
         .container {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(15px);
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        /* Видео секция */
+        .video-section {
+            background: #0f0f1a;
             border-radius: 24px;
-            padding: 35px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            max-width: 500px;
-            width: 95%;
-        }
-
-        h1 {
-            font-size: 2.2rem;
-            margin-bottom: 5px;
-            background: linear-gradient(90deg, #f7971e, #ffd200);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .subtitle {
-            font-size: 0.85rem;
-            opacity: 0.6;
-            margin-bottom: 20px;
-        }
-
-        /* Экраны */
-        .screen {
-            display: none;
-        }
-        .screen.active {
-            display: block;
-        }
-
-        /* Экран лобби */
-        .lobby-buttons {
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        .btn {
-            padding: 14px 30px;
-            font-size: 1rem;
-            font-weight: 600;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            color: #fff;
-            transition: all 0.3s ease;
-            letter-spacing: 0.5px;
-            width: 100%;
-        }
-
-        .btn-create {
-            background: linear-gradient(90deg, #f7971e, #ffd200);
-            color: #1a1a1a;
-        }
-        .btn-join {
-            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
-        }
-        .btn-copy {
-            background: rgba(255, 255, 255, 0.1);
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.15);
-        }
-        .btn:active {
-            transform: scale(0.96);
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .input-code {
-            width: 100%;
-            padding: 14px 20px;
-            font-size: 1.1rem;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50px;
-            background: rgba(255, 255, 255, 0.06);
-            color: #fff;
-            text-align: center;
-            letter-spacing: 3px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-        .input-code:focus {
-            border-color: #00d2ff;
-        }
-        .input-code::placeholder {
-            letter-spacing: 1px;
-            opacity: 0.5;
-        }
-
-        .code-display {
-            background: rgba(0, 0, 0, 0.4);
-            padding: 15px 25px;
-            border-radius: 50px;
-            font-size: 2rem;
-            font-weight: bold;
-            letter-spacing: 8px;
-            margin: 15px 0;
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            user-select: all;
-        }
-
-        .waiting-text {
-            animation: dots 1.5s infinite;
-        }
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
-        }
-        .waiting-text::after {
-            content: '';
-            animation: dotsAnim 1.5s infinite;
-        }
-        @keyframes dotsAnim {
-            0% { content: '.'; }
-            33% { content: '..'; }
-            66% { content: '...'; }
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 50px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        .status-connected {
-            background: rgba(76, 175, 80, 0.3);
-            color: #4caf50;
-        }
-        .status-waiting {
-            background: rgba(255, 152, 0, 0.3);
-            color: #ff9800;
-        }
-        .status-disconnected {
-            background: rgba(244, 67, 54, 0.3);
-            color: #f44336;
-        }
-
-        /* Экран игры */
-        .player-info {
+        .videos-container {
+            flex: 1;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            font-size: 0.95rem;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            background: #00000022;
         }
-        .player-tag {
-            padding: 8px 18px;
-            border-radius: 50px;
-            font-weight: bold;
+
+        .video-wrapper {
+            background: #1a1a2a;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            flex: 1;
+            min-height: 0;
         }
-        .player-you {
-            background: rgba(255, 255, 255, 0.1);
+
+        .video-wrapper.local {
+            flex: 0.6;
         }
-        .player-opponent {
-            background: rgba(255, 255, 255, 0.05);
+
+        .video-wrapper.remote {
+            flex: 1;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .video-label {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Чат секция */
+        .chat-section {
+            background: #0f0f1a;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: #1a1a2e;
+            border-bottom: 1px solid #2a2a40;
+        }
+
+        .chat-header h3 {
+            font-size: 18px;
+        }
+
+        .online-status {
+            font-size: 12px;
+            color: #4ade80;
+            margin-top: 4px;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 14px;
+            word-wrap: break-word;
+        }
+
+        .message.sent {
+            background: #3b82f6;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.received {
+            background: #2a2a40;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-info {
+            font-size: 11px;
             opacity: 0.7;
-        }
-        .vs {
-            font-weight: bold;
-            opacity: 0.5;
-        }
-        .your-symbol {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            line-height: 30px;
-            border-radius: 50%;
-            font-weight: bold;
-            margin-left: 5px;
-        }
-        .symbol-x {
-            background: rgba(0, 210, 255, 0.3);
-            color: #00d2ff;
-        }
-        .symbol-o {
-            background: rgba(255, 107, 157, 0.3);
-            color: #ff6b9d;
+            margin-top: 4px;
         }
 
-        .turn-indicator {
-            font-size: 1.1rem;
-            margin: 15px 0;
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 50px;
-            display: inline-block;
-        }
-        .turn-indicator.my-turn {
-            background: rgba(76, 175, 80, 0.25);
-            animation: glowPulse 1.5s ease-in-out infinite;
-        }
-        @keyframes glowPulse {
-            0%, 100% { box-shadow: 0 0 10px rgba(76, 175, 80, 0.2); }
-            50% { box-shadow: 0 0 25px rgba(76, 175, 80, 0.5); }
+        .chat-input {
+            padding: 15px;
+            background: #1a1a2e;
+            border-top: 1px solid #2a2a40;
+            display: flex;
+            gap: 10px;
         }
 
-        .board {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-template-rows: repeat(3, 100px);
-            gap: 6px;
-            margin: 20px auto;
-            justify-content: center;
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 24px;
+            background: #2a2a40;
+            color: white;
+            outline: none;
         }
 
-        .cell {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.12);
-            border-radius: 14px;
+        .chat-input button {
+            padding: 12px 20px;
+            background: #3b82f6;
+            border: none;
+            border-radius: 24px;
+            color: white;
             cursor: pointer;
-            font-size: 2.8rem;
-            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .chat-input button:hover {
+            background: #2563eb;
+        }
+
+        /* Панель управления */
+        .control-panel {
+            padding: 20px;
+            background: #1a1a2e;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            border-top: 1px solid #2a2a40;
+        }
+
+        .control-btn {
+            background: #2a2a40;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #3a3a50;
+        }
+
+        .control-btn.danger {
+            background: #dc2626;
+        }
+
+        .control-btn.danger:hover {
+            background: #b91c1c;
+        }
+
+        .control-btn.success {
+            background: #10b981;
+        }
+
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e1e2f, #0f0f1a);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
-            user-select: none;
-        }
-        .cell:hover:not(.taken):not(.disabled) {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.3);
-            transform: scale(1.04);
-        }
-        .cell.taken {
-            cursor: not-allowed;
-        }
-        .cell.disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-        .cell.x {
-            color: #00d2ff;
-            text-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
-        }
-        .cell.o {
-            color: #ff6b9d;
-            text-shadow: 0 0 15px rgba(255, 107, 157, 0.5);
-        }
-        .cell.win-cell {
-            animation: winPulse 0.7s ease-in-out infinite alternate;
-            border-color: #4caf50 !important;
-            background: rgba(76, 175, 80, 0.2) !important;
-        }
-        @keyframes winPulse {
-            from { box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }
-            to { box-shadow: 0 0 25px rgba(76, 175, 80, 0.7); }
+            z-index: 1000;
         }
 
-        .score-row {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-        .score-row span {
-            font-weight: bold;
-            font-size: 1.2rem;
+        .login-card {
+            background: #1a1a2e;
+            padding: 40px;
+            border-radius: 32px;
+            width: 350px;
+            text-align: center;
         }
 
-        .btn-sm {
-            padding: 10px 24px;
-            font-size: 0.85rem;
-            width: auto;
-            margin-top: 10px;
+        .login-card input {
+            width: 100%;
+            padding: 14px;
+            margin: 15px 0;
+            border: none;
+            border-radius: 30px;
+            background: #2a2a40;
+            color: white;
+            font-size: 16px;
         }
 
-        .toast {
+        .login-card button {
+            width: 100%;
+            padding: 14px;
+            background: #3b82f6;
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .call-notification {
             position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.85);
-            color: #fff;
-            padding: 12px 28px;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            z-index: 999;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-        .toast.show {
-            opacity: 1;
+            bottom: 30px;
+            right: 30px;
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 20px;
+            z-index: 200;
+            box-shadow: 0 10px 30px black;
+            border-left: 4px solid #3b82f6;
         }
 
-        @media (max-width: 420px) {
-            .board {
-                grid-template-columns: repeat(3, 80px);
-                grid-template-rows: repeat(3, 80px);
-                gap: 4px;
-            }
-            .cell {
-                font-size: 2.2rem;
-                border-radius: 10px;
-            }
-            .code-display {
-                font-size: 1.4rem;
-                letter-spacing: 4px;
-            }
-            h1 {
-                font-size: 1.6rem;
-            }
-            .container {
-                padding: 20px;
-            }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="toast" id="toast"></div>
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <h2>📹 Видео мессенджер</h2>
+            <input type="text" id="myName" placeholder="Ваше имя" autocomplete="off">
+            <button onclick="login()">Войти</button>
+        </div>
+    </div>
 
-        <!-- ЭКРАН ЛОББИ -->
-        <div class="screen active" id="lobbyScreen">
-            <h1>⚡ Крестики-Нолики</h1>
-            <p class="subtitle">Игра по сети без сервера (P2P)</p>
-            <div class="lobby-buttons">
-                <button class="btn btn-create" id="btnCreate">🎮 Создать игру</button>
-                <button class="btn btn-join" id="btnShowJoin">🔗 Присоединиться</button>
+    <div id="mainApp" class="container hidden">
+        <div class="video-section">
+            <div class="videos-container">
+                <div class="video-wrapper local">
+                    <video id="localVideo" autoplay muted playsinline></video>
+                    <div class="video-label">Вы</div>
+                </div>
+                <div class="video-wrapper remote">
+                    <video id="remoteVideo" autoplay playsinline></video>
+                    <div class="video-label" id="remoteLabel">Собеседник</div>
+                </div>
+            </div>
+            <div class="control-panel">
+                <button class="control-btn" id="toggleVideoBtn">🎥 Выкл видео</button>
+                <button class="control-btn" id="toggleAudioBtn">🎤 Выкл микрофон</button>
+                <button class="control-btn danger" id="endCallBtn" style="display:none">📞 Завершить звонок</button>
+                <button class="control-btn success" id="startCallBtn">📞 Позвонить</button>
             </div>
         </div>
 
-        <!-- ЭКРАН СОЗДАНИЯ -->
-        <div class="screen" id="createScreen">
-            <h1>📡 Ваша комната создана</h1>
-            <p style="margin-top:10px;">Отправьте этот код сопернику:</p>
-            <div class="code-display" id="roomCodeDisplay">...</div>
-            <button class="btn btn-copy" id="btnCopy">📋 Скопировать код</button>
-            <p style="margin-top:20px;" class="waiting-text">Ожидаем подключения соперника</p>
-            <div class="status-badge status-waiting">⏳ Ожидание</div>
-            <br>
-            <button class="btn btn-sm" id="btnCancelCreate" style="background:rgba(255,255,255,0.08);">← Назад</button>
-        </div>
-
-        <!-- ЭКРАН ПОДКЛЮЧЕНИЯ -->
-        <div class="screen" id="joinScreen">
-            <h1>🔗 Присоединиться</h1>
-            <p style="margin:15px 0;">Введите код комнаты:</p>
-            <input type="text" class="input-code" id="inputRoomCode" placeholder="КОД" maxlength="12" autocomplete="off">
-            <button class="btn btn-join" id="btnJoin" style="margin-top:15px;">Подключиться</button>
-            <div id="joinStatus" style="margin-top:10px;"></div>
-            <br>
-            <button class="btn btn-sm" id="btnCancelJoin" style="background:rgba(255,255,255,0.08);">← Назад</button>
-        </div>
-
-        <!-- ЭКРАН ИГРЫ -->
-        <div class="screen" id="gameScreen">
-            <h1>⚡ Крестики-Нолики</h1>
-            <div class="player-info">
-                <span class="player-tag player-you">Вы: <span class="your-symbol" id="mySymbolBadge">?</span></span>
-                <span class="vs">VS</span>
-                <span class="player-tag player-opponent">Соперник: <span class="your-symbol" id="oppSymbolBadge" style="opacity:0.5;">?</span></span>
+        <div class="chat-section">
+            <div class="chat-header">
+                <h3>💬 Чат</h3>
+                <div class="online-status" id="peerIdDisplay"></div>
             </div>
-            <div class="status-badge status-connected" id="connectionBadge">🟢 На связи</div>
-            <div class="turn-indicator" id="turnIndicator">Ход: ...</div>
-            <div class="board" id="board"></div>
-            <div class="score-row">
-                <span>❌ <span id="scoreX">0</span></span>
-                <span>🤝 <span id="scoreDraw">0</span></span>
-                <span>⭕ <span id="scoreO">0</span></span>
+            <div class="messages" id="messagesList"></div>
+            <div class="chat-input">
+                <input type="text" id="messageInput" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()">Отправить</button>
             </div>
-            <button class="btn btn-sm" id="btnNewRound" style="background: linear-gradient(90deg, #f7971e, #ffd200); color:#1a1a1a; display:none;">🔄 Новый раунд</button>
-            <br>
-            <button class="btn btn-sm" id="btnLeave" style="background:rgba(244,67,54,0.3); margin-top:8px;">🚪 Выйти</button>
+        </div>
+    </div>
+
+    <div id="callNotification" class="call-notification hidden">
+        <p id="callerName">Звонок...</p>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button onclick="answerCall(true)">📹 Ответить (видео)</button>
+            <button onclick="answerCall(false)">🎤 Только аудио</button>
+            <button onclick="rejectCall()">❌ Отклонить</button>
         </div>
     </div>
 
     <script>
-        // ============ P2P менеджер через WebRTC ============
-        class P2PManager {
-            constructor() {
-                this.peer = null;
-                this.dataChannel = null;
-                this.isHost = false;
-                this.roomCode = null;
-                this.onMessage = null;
-                this.onConnected = null;
-                this.onDisconnected = null;
+        // Глобальные переменные
+        let peer = null;
+        let myId = null;
+        let myName = "";
+        let currentCall = null;     // активный звонок (PeerJS connection)
+        let currentStream = null;   // локальный медиапоток
+        let remoteStream = null;    
+        let callType = "video";     // video или audio
+        let videoEnabled = true;
+        let audioEnabled = true;
+        let pendingCallFrom = null;  // кто звонит (peerId)
+        let pendingCallType = null;
+
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const messagesList = document.getElementById('messagesList');
+        const peerIdDisplay = document.getElementById('peerIdDisplay');
+
+        // Функция логина
+        async function login() {
+            myName = document.getElementById('myName').value.trim();
+            if (!myName) {
+                alert("Введите имя");
+                return;
             }
-
-            // Создать комнату (хост)
-            async createRoom() {
-                this.isHost = true;
-                this.roomCode = this._generateCode();
-                this.peer = new RTCPeerConnection({
-                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-                });
-
-                this.dataChannel = this.peer.createDataChannel('game');
-                this._setupDataChannel();
-                this._setupPeerEvents();
-
-                // Ждём ICE кандидатов и создаём оффер
-                const offer = await this.peer.createOffer();
-                await this.peer.setLocalDescription(offer);
-
-                return this.roomCode;
-            }
-
-            // Получить SDP для передачи (через код комнаты — копипаста)
-            getLocalSDP() {
-                return btoa(JSON.stringify(this.peer.localDescription));
-            }
-
-            // Применить SDP от удалённого пира
-            async applyRemoteSDP(sdpBase64) {
-                const sdp = JSON.parse(atob(sdpBase64));
-                if (sdp.type === 'offer') {
-                    await this.peer.setRemoteDescription(new RTCSessionDescription(sdp));
-                    const answer = await this.peer.createAnswer();
-                    await this.peer.setLocalDescription(answer);
-                    return this.getLocalSDP();
-                } else if (sdp.type === 'answer') {
-                    await this.peer.setRemoteDescription(new RTCSessionDescription(sdp));
+            
+            // Создаём Peer с случайным ID
+            peer = new Peer({
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
                 }
-                return null;
-            }
+            });
 
-            // Применить ICE кандидата
-            async addIceCandidate(candidateBase64) {
-                if (!this.peer) return;
-                const candidate = JSON.parse(atob(candidateBase64));
-                await this.peer.addIceCandidate(new RTCIceCandidate(candidate));
-            }
+            peer.on('open', (id) => {
+                myId = id;
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                peerIdDisplay.innerText = `Ваш ID: ${myId} | Имя: ${myName}`;
+                addSystemMessage(`Ваш ID для звонков: ${myId}`);
+                
+                // Запрашиваем медиа (камера/микрофон)
+                initMedia(true);
+            });
 
-            // Отправить данные сопернику
-            send(data) {
-                if (this.dataChannel && this.dataChannel.readyState === 'open') {
-                    this.dataChannel.send(JSON.stringify(data));
+            peer.on('call', (call) => {
+                // Входящий звонок
+                pendingCallFrom = call.peer;
+                pendingCallType = call.metadata?.type || "video";
+                
+                // Получаем имя звонящего (если сохраняли ранее)
+                const callerDisplay = peer._connections[call.peer]?.peer || call.peer;
+                document.getElementById('callerName').innerText = `📞 Входящий звонок от ${callerDisplay} (${pendingCallType === 'video' ? 'видео' : 'аудио'})`;
+                document.getElementById('callNotification').classList.remove('hidden');
+                
+                // Сохраняем объект звонка
+                currentCall = call;
+            });
+
+            peer.on('connection', (conn) => {
+                // Дата-канал для чата
+                setupDataConnection(conn);
+            });
+
+            peer.on('error', (err) => {
+                console.error("Peer error:", err);
+                addSystemMessage("Ошибка подключения: " + err.type);
+            });
+        }
+
+        // Инициализация камеры/микрофона
+        async function initMedia(withVideo = true) {
+            try {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
                 }
-            }
-
-            _setupDataChannel() {
-                if (this.dataChannel) {
-                    this.dataChannel.onopen = () => {
-                        console.log('DataChannel открыт');
-                        if (this.onConnected) this.onConnected();
-                    };
-                    this.dataChannel.onmessage = (e) => {
-                        const data = JSON.parse(e.data);
-                        if (this.onMessage) this.onMessage(data);
-                    };
-                    this.dataChannel.onclose = () => {
-                        if (this.onDisconnected) this.onDisconnected();
-                    };
-                }
-            }
-
-            _setupPeerEvents() {
-                // Для хоста: когда приходит удалённый DataChannel
-                this.peer.ondatachannel = (e) => {
-                    this.dataChannel = e.channel;
-                    this._setupDataChannel();
+                const constraints = {
+                    video: withVideo,
+                    audio: true
                 };
-
-                this.peer.onicecandidate = (e) => {
-                    if (e.candidate) {
-                        const candidateB64 = btoa(JSON.stringify(e.candidate));
-                        // Сохраняем для обмена
-                        if (!this._pendingCandidates) this._pendingCandidates = [];
-                        this._pendingCandidates.push(candidateB64);
-                    }
-                };
-
-                this.peer.onconnectionstatechange = () => {
-                    console.log('Connection state:', this.peer.connectionState);
-                    if (this.peer.connectionState === 'disconnected' || 
-                        this.peer.connectionState === 'failed') {
-                        if (this.onDisconnected) this.onDisconnected();
-                    }
-                };
-            }
-
-            getPendingCandidates() {
-                const cands = this._pendingCandidates || [];
-                this._pendingCandidates = [];
-                return cands;
-            }
-
-            destroy() {
-                if (this.dataChannel) this.dataChannel.close();
-                if (this.peer) this.peer.close();
-                this.peer = null;
-                this.dataChannel = null;
-            }
-
-            _generateCode() {
-                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                let code = '';
-                for (let i = 0; i < 6; i++) {
-                    code += chars[Math.floor(Math.random() * chars.length)];
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                currentStream = stream;
+                localVideo.srcObject = stream;
+                videoEnabled = withVideo;
+                audioEnabled = true;
+                updateButtons();
+            } catch (err) {
+                console.error("Media error:", err);
+                addSystemMessage("Не удалось получить доступ к камере/микрофону");
+                // Пробуем только аудио
+                if (withVideo) {
+                    initMedia(false);
                 }
-                return code;
             }
         }
 
-        // ============ Логика игры ============
-        class Game {
-            constructor() {
-                this.p2p = new P2PManager();
-                this.mySymbol = null;
-                this.board = [['','',''],['','',''],['','','']];
-                this.currentTurn = 'X';
-                this.gameOver = false;
-                this.winLine = null;
-                this.scores = { X: 0, O: 0, draw: 0 };
-                this.roundActive = false;
-
-                this._initUI();
-                this._bindEvents();
-            }
-
-            _initUI() {
-                this.screens = {
-                    lobby: document.getElementById('lobbyScreen'),
-                    create: document.getElementById('createScreen'),
-                    join: document.getElementById('joinScreen'),
-                    game: document.getElementById('gameScreen'),
-                };
-                this.boardEl = document.getElementById('board');
-                this.turnIndicator = document.getElementById('turnIndicator');
-                this.connectionBadge = document.getElementById('connectionBadge');
-                this.btnNewRound = document.getElementById('btnNewRound');
-                this.toast = document.getElementById('toast');
-            }
-
-            _showScreen(name) {
-                Object.values(this.screens).forEach(s => s.classList.remove('active'));
-                this.screens[name].classList.add('active');
-            }
-
-            _bindEvents() {
-                // Лобби
-                document.getElementById('btnCreate').addEventListener('click', () => this._createRoom());
-                document.getElementById('btnShowJoin').addEventListener('click', () => this._showScreen('join'));
-                document.getElementById('btnCancelCreate').addEventListener('click', () => this._leaveLobby());
-                document.getElementById('btnCancelJoin').addEventListener('click', () => this._showScreen('lobby'));
-                document.getElementById('btnCopy').addEventListener('click', () => this._copyCode());
-                document.getElementById('btnJoin').addEventListener('click', () => this._joinRoom());
-                document.getElementById('btnLeave').addEventListener('click', () => this._leaveGame());
-                document.getElementById('btnNewRound').addEventListener('click', () => this._requestNewRound());
-
-                // Клики по доске
-                this.boardEl.addEventListener('click', (e) => {
-                    const cell = e.target.closest('.cell');
-                    if (!cell || !this.roundActive || this.gameOver) return;
-                    if (this.currentTurn !== this.mySymbol) return;
-                    const row = parseInt(cell.dataset.row);
-                    const col = parseInt(cell.dataset.col);
-                    if (this.board[row][col] !== '') return;
-                    this._makeMove(row, col);
-                });
-
-                // P2P события
-                this.p2p.onConnected = () => this._onP2PConnected();
-                this.p2p.onDisconnected = () => this._onP2PDisconnected();
-                this.p2p.onMessage = (data) => this._onP2PMessage(data);
-            }
-
-            // ---------- Комната ----------
-            async _createRoom() {
-                const code = await this.p2p.createRoom();
-                document.getElementById('roomCodeDisplay').textContent = code;
-                this._showScreen('create');
-                this.mySymbol = 'X'; // Хост всегда X
-                this._toast('Комната создана! Ожидаем соперника...');
-            }
-
-            _copyCode() {
-                const code = document.getElementById('roomCodeDisplay').textContent;
-                navigator.clipboard.writeText(code).then(() => {
-                    this._toast('✅ Код скопирован!');
-                }).catch(() => {
-                    this._toast('Не удалось скопировать. Выделите код вручную.');
-                });
-            }
-
-            async _joinRoom() {
-                const inputCode = document.getElementById('inputRoomCode').value.trim().toUpperCase();
-                if (inputCode.length < 4) {
-                    this._toast('Введите код комнаты');
+        // Начать звонок
+        function startCall() {
+            const targetId = prompt("Введите ID собеседника:");
+            if (!targetId) return;
+            
+            const useVideo = confirm("Звонок с видео? (ОК - видео, Отмена - только аудио)");
+            callType = useVideo ? "video" : "audio";
+            
+            // Переинициализируем медиа с нужным типом
+            initMedia(useVideo).then(() => {
+                if (!currentStream) {
+                    addSystemMessage("Не удалось получить медиапоток");
                     return;
                 }
-
-                // Джойнер создаёт своё соединение
-                this.p2p.isHost = false;
-                this.p2p.roomCode = inputCode;
-                this.p2p.peer = new RTCPeerConnection({
-                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-                });
-                this.p2p._setupDataChannel();
-                this.p2p._setupPeerEvents();
-                this.p2p.onConnected = () => this._onP2PConnected();
-                this.p2p.onDisconnected = () => this._onP2PDisconnected();
-                this.p2p.onMessage = (data) => this._onP2PMessage(data);
-
-                document.getElementById('joinStatus').innerHTML = '<span style="color:#ff9800;">⏳ Устанавливаем соединение...</span>';
-
-                // Джойнер ждёт, что хост передаст ему свой SDP и кандидатов
-                // Для этого используем упрощённый механизм: код комнаты = ключ для ручного обмена
-                // На практике игроки копипастят SDP через тот же код (расширенный формат)
-                // Здесь мы делаем так: код комнаты кодирует SDP + кандидаты
-                this._showScreen('join');
-                this._toast('Попросите хозяина комнаты отправить полный код подключения');
                 
-                // Упрощение: добавляем поле для SDP обмена
-                this._showSDPExchangeUI();
-            }
-
-            _showSDPExchangeUI() {
-                // Показываем поля для обмена SDP вручную
-                const joinScreen = document.getElementById('joinScreen');
-                
-                // Проверяем, не добавлены ли уже поля
-                if (document.getElementById('sdpExchangeArea')) return;
-                
-                const sdpArea = document.createElement('div');
-                sdpArea.id = 'sdpExchangeArea';
-                sdpArea.style.marginTop = '20px';
-                sdpArea.innerHTML = `
-                    <p style="font-size:0.85rem;opacity:0.7;">Обмен SDP (скопируйте у хоста и вставьте сюда):</p>
-                    <textarea id="remoteSDP" placeholder="Вставьте SDP от хоста..." 
-                        style="width:100%;height:70px;background:rgba(255,255,255,0.06);color:#fff;
-                        border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px;
-                        font-size:0.75rem;resize:vertical;"></textarea>
-                    <button class="btn btn-sm" id="btnApplySDP" style="margin-top:8px;background:#00d2ff;">Применить SDP</button>
-                    <p style="font-size:0.75rem;margin-top:8px;opacity:0.6;" id="sdpResponseInfo"></p>
-                    <textarea id="mySDPOutput" readonly placeholder="Ваш SDP (отправьте хосту)..." 
-                        style="width:100%;height:70px;background:rgba(255,255,255,0.04);color:#fff;
-                        border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px;
-                        font-size:0.75rem;resize:vertical;margin-top:5px;"></textarea>
-                    <button class="btn btn-sm btn-copy" id="btnCopyMySDP" style="margin-top:5px;">📋 Скопировать мой SDP</button>
-                `;
-                joinScreen.appendChild(sdpArea);
-
-                document.getElementById('btnApplySDP').addEventListener('click', async () => {
-                    const sdpB64 = document.getElementById('remoteSDP').value.trim();
-                    if (!sdpB64) return;
-                    try {
-                        const answerSDP = await this.p2p.applyRemoteSDP(sdpB64);
-                        if (answerSDP) {
-                            document.getElementById('mySDPOutput').value = answerSDP;
-                            document.getElementById('sdpResponseInfo').textContent = 
-                                '✅ Отправьте этот SDP обратно хосту!';
-                        }
-                        // Обмен кандидатами
-                        const cands = this.p2p.getPendingCandidates();
-                        if (cands.length > 0) {
-                            // Отправляем кандидатов через механизм сообщений после подключения
-                        }
-                        this._toast('SDP применён! Ждите подключения...');
-                    } catch(e) {
-                        this._toast('❌ Ошибка SDP: ' + e.message);
-                    }
+                // Создаём звонок
+                const call = peer.call(targetId, currentStream, {
+                    metadata: { type: callType, fromName: myName }
                 });
-
-                document.getElementById('btnCopyMySDP').addEventListener('click', () => {
-                    const sdp = document.getElementById('mySDPOutput').value;
-                    navigator.clipboard.writeText(sdp).then(() => this._toast('✅ SDP скопирован!'));
-                });
-            }
-
-            // На стороне хоста тоже показываем SDP для отправки
-            _showHostSDPUI() {
-                if (document.getElementById('hostSDPArea')) return;
-                const createScreen = document.getElementById('createScreen');
-                const sdpArea = document.createElement('div');
-                sdpArea.id = 'hostSDPArea';
-                sdpArea.style.marginTop = '15px';
-                sdpArea.innerHTML = `
-                    <p style="font-size:0.8rem;opacity:0.7;">Ваш SDP (отправьте сопернику):</p>
-                    <textarea id="hostSDPOutput" readonly 
-                        style="width:100%;height:65px;background:rgba(255,255,255,0.04);color:#fff;
-                        border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px;
-                        font-size:0.7rem;resize:vertical;"></textarea>
-                    <button class="btn btn-sm btn-copy" id="btnCopyHostSDP" style="margin-top:5px;">📋 Скопировать SDP</button>
-                    <p style="font-size:0.75rem;margin-top:8px;opacity:0.6;">После отправки SDP, вставьте ответный SDP соперника:</p>
-                    <textarea id="remoteAnswerSDP" placeholder="Вставьте ответный SDP..." 
-                        style="width:100%;height:65px;background:rgba(255,255,255,0.06);color:#fff;
-                        border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:10px;
-                        font-size:0.7rem;resize:vertical;"></textarea>
-                    <button class="btn btn-sm" id="btnApplyAnswerSDP" style="margin-top:5px;background:#f7971e;">Применить ответ</button>
-                `;
-                createScreen.appendChild(sdpArea);
-
-                // Показываем SDP хоста
-                setTimeout(() => {
-                    document.getElementById('hostSDPOutput').value = this.p2p.getLocalSDP();
-                }, 500);
-
-                document.getElementById('btnCopyHostSDP').addEventListener('click', () => {
-                    const sdp = document.getElementById('hostSDPOutput').value;
-                    navigator.clipboard.writeText(sdp).then(() => this._toast('✅ SDP скопирован!'));
-                });
-
-                document.getElementById('btnApplyAnswerSDP').addEventListener('click', async () => {
-                    const answerB64 = document.getElementById('remoteAnswerSDP').value.trim();
-                    if (!answerB64) return;
-                    try {
-                        await this.p2p.applyRemoteSDP(answerB64);
-                        this._toast('✅ Ответ применён! Соединение устанавливается...');
-                    } catch(e) {
-                        this._toast('❌ Ошибка: ' + e.message);
-                    }
-                });
-            }
-
-            _onP2PConnected() {
-                this._showScreen('game');
-                this._connectionBadge('🟢 На связи', 'status-connected');
                 
-                if (this.p2p.isHost) {
-                    this.mySymbol = 'X';
-                } else {
-                    this.mySymbol = 'O';
+                setupCall(call, targetId);
+                document.getElementById('startCallBtn').style.display = 'none';
+                document.getElementById('endCallBtn').style.display = 'inline-block';
+            });
+        }
+
+        // Ответ на звонок
+        async function answerCall(withVideo) {
+            document.getElementById('callNotification').classList.add('hidden');
+            
+            if (!currentCall) return;
+            
+            const useVideo = (withVideo && pendingCallType === 'video');
+            await initMedia(useVideo);
+            
+            if (currentStream) {
+                currentCall.answer(currentStream);
+                setupCall(currentCall, pendingCallFrom);
+                document.getElementById('startCallBtn').style.display = 'none';
+                document.getElementById('endCallBtn').style.display = 'inline-block';
+            }
+            pendingCallFrom = null;
+        }
+
+        function rejectCall() {
+            if (currentCall) {
+                currentCall.close();
+            }
+            document.getElementById('callNotification').classList.add('hidden');
+            currentCall = null;
+            pendingCallFrom = null;
+        }
+
+        function setupCall(call, remotePeerId) {
+            call.on('stream', (remoteStream) => {
+                remoteVideo.srcObject = remoteStream;
+                remoteStream = remoteStream;
+            });
+            
+            call.on('close', () => {
+                endCall();
+            });
+            
+            currentCall = call;
+            
+            // Создаём дата-канал для чата
+            const conn = peer.connect(remotePeerId);
+            setupDataConnection(conn);
+        }
+
+        function setupDataConnection(conn) {
+            conn.on('open', () => {
+                console.log("Data connection opened");
+            });
+            conn.on('data', (data) => {
+                const msg = JSON.parse(data);
+                if (msg.type === 'chat') {
+                    addMessage(msg.fromName || msg.from, msg.text, false, msg.time);
                 }
-                
-                this._updatePlayerBadges();
-                this._startRound();
-                this._toast('🎮 Соединение установлено! Игра началась.');
-            }
+            });
+            // Сохраняем для отправки сообщений
+            window.activeDataConn = conn;
+        }
 
-            _onP2PDisconnected() {
-                this._connectionBadge('🔴 Соединение потеряно', 'status-disconnected');
-                this.roundActive = false;
-                this.gameOver = true;
-                this._renderBoard();
-                this._toast('Соединение с соперником потеряно');
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text) return;
+            if (!window.activeDataConn || window.activeDataConn.open === false) {
+                addSystemMessage("Нет активного соединения для чата");
+                return;
             }
+            
+            const message = {
+                type: 'chat',
+                text: text,
+                from: myId,
+                fromName: myName,
+                time: new Date().toLocaleTimeString()
+            };
+            window.activeDataConn.send(JSON.stringify(message));
+            addMessage(myName, text, true, message.time);
+            input.value = '';
+        }
 
-            _onP2PMessage(data) {
-                switch(data.type) {
-                    case 'move':
-                        this._applyMove(data.row, data.col, data.symbol);
-                        break;
-                    case 'new_round':
-                        this._startRound();
-                        break;
-                    case 'chat':
-                        // Можно добавить чат
-                        break;
+        function addMessage(sender, text, isSent, time) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+            msgDiv.innerHTML = `<div>${text}</div><div class="message-info">${sender} • ${time || new Date().toLocaleTimeString()}</div>`;
+            messagesList.appendChild(msgDiv);
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+
+        function addSystemMessage(text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.style.textAlign = 'center';
+            msgDiv.style.fontSize = '12px';
+            msgDiv.style.opacity = '0.7';
+            msgDiv.style.padding = '5px';
+            msgDiv.innerText = text;
+            messagesList.appendChild(msgDiv);
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+
+        function endCall() {
+            if (currentCall) {
+                currentCall.close();
+                currentCall = null;
+            }
+            if (remoteStream) {
+                remoteStream.getTracks().forEach(t => t.stop());
+                remoteVideo.srcObject = null;
+            }
+            document.getElementById('startCallBtn').style.display = 'inline-block';
+            document.getElementById('endCallBtn').style.display = 'none';
+            addSystemMessage("Звонок завершён");
+        }
+
+        function toggleVideo() {
+            if (currentStream) {
+                const videoTrack = currentStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    videoEnabled = !videoEnabled;
+                    videoTrack.enabled = videoEnabled;
+                    document.getElementById('toggleVideoBtn').innerHTML = videoEnabled ? "🎥 Выкл видео" : "🎥 Вкл видео";
                 }
-            }
-
-            // ---------- Игра ----------
-            _startRound() {
-                this.board = [['','',''],['','',''],['','','']];
-                this.currentTurn = 'X';
-                this.gameOver = false;
-                this.winLine = null;
-                this.roundActive = true;
-                this.btnNewRound.style.display = 'none';
-                this._updateTurnIndicator();
-                this._renderBoard();
-            }
-
-            _makeMove(row, col) {
-                this.board[row][col] = this.mySymbol;
-                // Отправляем ход сопернику
-                this.p2p.send({
-                    type: 'move',
-                    row: row,
-                    col: col,
-                    symbol: this.mySymbol
-                });
-                this._afterMove(row, col, this.mySymbol);
-            }
-
-            _applyMove(row, col, symbol) {
-                this.board[row][col] = symbol;
-                this._afterMove(row, col, symbol);
-            }
-
-            _afterMove(row, col, symbol) {
-                const winResult = this._checkWin();
-                if (winResult) {
-                    this.gameOver = true;
-                    this.winLine = winResult;
-                    this.roundActive = false;
-                    this.scores[symbol]++;
-                    this._updateScores();
-                    this._updateTurnIndicator(true, symbol);
-                    this.btnNewRound.style.display = 'inline-block';
-                } else if (this._isBoardFull()) {
-                    this.gameOver = true;
-                    this.roundActive = false;
-                    this.scores.draw++;
-                    this._updateScores();
-                    this._updateTurnIndicator(false, null, true);
-                    this.btnNewRound.style.display = 'inline-block';
-                } else {
-                    this.currentTurn = this.currentTurn === 'X' ? 'O' : 'X';
-                    this._updateTurnIndicator();
-                }
-                this._renderBoard();
-            }
-
-            _checkWin() {
-                const b = this.board;
-                for (let i = 0; i < 3; i++) {
-                    if (b[i][0] && b[i][0] === b[i][1] && b[i][1] === b[i][2])
-                        return [[i,0],[i,1],[i,2]];
-                    if (b[0][i] && b[0][i] === b[1][i] && b[1][i] === b[2][i])
-                        return [[0,i],[1,i],[2,i]];
-                }
-                if (b[0][0] && b[0][0] === b[1][1] && b[1][1] === b[2][2])
-                    return [[0,0],[1,1],[2,2]];
-                if (b[0][2] && b[0][2] === b[1][1] && b[1][1] === b[2][0])
-                    return [[0,2],[1,1],[2,0]];
-                return null;
-            }
-
-            _isBoardFull() {
-                return this.board.every(r => r.every(c => c !== ''));
-            }
-
-            _isWinCell(row, col) {
-                return this.winLine && this.winLine.some(([r,c]) => r === row && c === col);
-            }
-
-            _renderBoard() {
-                this.boardEl.innerHTML = '';
-                for (let i = 0; i < 3; i++) {
-                    for (let j = 0; j < 3; j++) {
-                        const cell = document.createElement('div');
-                        cell.classList.add('cell');
-                        cell.dataset.row = i;
-                        cell.dataset.col = j;
-                        
-                        if (this.board[i][j]) {
-                            cell.textContent = this.board[i][j];
-                            cell.classList.add('taken', this.board[i][j].toLowerCase());
-                        }
-                        
-                        if (!this.roundActive || this.gameOver) {
-                            cell.classList.add('disabled');
-                        }
-                        
-                        if (this._isWinCell(i, j)) {
-                            cell.classList.add('win-cell');
-                        }
-                        
-                        this.boardEl.appendChild(cell);
-                    }
-                }
-            }
-
-            _updateTurnIndicator(isWin = false, winner = null, isDraw = false) {
-                const ind = this.turnIndicator;
-                ind.classList.remove('my-turn');
-                
-                if (isWin && winner === this.mySymbol) {
-                    ind.textContent = '🎉 Вы победили!';
-                    ind.classList.add('my-turn');
-                } else if (isWin) {
-                    ind.textContent = '😔 Соперник победил';
-                } else if (isDraw) {
-                    ind.textContent = '🤝 Ничья!';
-                } else if (this.currentTurn === this.mySymbol) {
-                    ind.textContent = 'Ваш ход';
-                    ind.classList.add('my-turn');
-                } else {
-                    ind.textContent = 'Ход соперника...';
-                }
-            }
-
-            _updatePlayerBadges() {
-                const myBadge = document.getElementById('mySymbolBadge');
-                const oppBadge = document.getElementById('oppSymbolBadge');
-                myBadge.textContent = this.mySymbol;
-                myBadge.className = 'your-symbol ' + (this.mySymbol === 'X' ? 'symbol-x' : 'symbol-o');
-                const oppSymbol = this.mySymbol === 'X' ? 'O' : 'X';
-                oppBadge.textContent = oppSymbol;
-                oppBadge.className = 'your-symbol ' + (oppSymbol === 'X' ? 'symbol-x' : 'symbol-o');
-            }
-
-            _updateScores() {
-                document.getElementById('scoreX').textContent = this.scores.X;
-                document.getElementById('scoreO').textContent = this.scores.O;
-                document.getElementById('scoreDraw').textContent = this.scores.draw;
-            }
-
-            _connectionBadge(text, className) {
-                this.connectionBadge.textContent = text;
-                this.connectionBadge.className = 'status-badge ' + className;
-            }
-
-            _requestNewRound() {
-                this.p2p.send({ type: 'new_round' });
-                this._startRound();
-                this._toast('🔄 Новый раунд!');
-            }
-
-            _leaveGame() {
-                this.p2p.destroy();
-                this._showScreen('lobby');
-                this._toast('Вы вышли из игры');
-            }
-
-            _leaveLobby() {
-                this.p2p.destroy();
-                this._showScreen('lobby');
-            }
-
-            _toast(msg) {
-                const t = this.toast;
-                t.textContent = msg;
-                t.classList.add('show');
-                clearTimeout(this._toastTimer);
-                this._toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
             }
         }
 
-        // Запуск
-        document.addEventListener('DOMContentLoaded', () => {
-            const game = new Game();
-            // Для хоста: показываем SDP UI при создании комнаты
-            const origCreate = game._createRoom.bind(game);
-            game._createRoom = async function() {
-                await origCreate();
-                setTimeout(() => game._showHostSDPUI(), 1000);
-            };
-            // Переопределяем _createRoom в экземпляре
-            game._createRoom = async function() {
-                await origCreate();
-                setTimeout(() => game._showHostSDPUI(), 1000);
-            };
-        });
+        function toggleAudio() {
+            if (currentStream) {
+                const audioTrack = currentStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    audioEnabled = !audioEnabled;
+                    audioTrack.enabled = audioEnabled;
+                    document.getElementById('toggleAudioBtn').innerHTML = audioEnabled ? "🎤 Выкл микрофон" : "🎤 Вкл микрофон";
+                }
+            }
+        }
+
+        function updateButtons() {
+            document.getElementById('toggleVideoBtn').innerHTML = "🎥 Выкл видео";
+            document.getElementById('toggleAudioBtn').innerHTML = "🎤 Выкл микрофон";
+        }
+
+        // Привязываем кнопки
+        document.getElementById('startCallBtn').onclick = startCall;
+        document.getElementById('endCallBtn').onclick = endCall;
+        document.getElementById('toggleVideoBtn').onclick = toggleVideo;
+        document.getElementById('toggleAudioBtn').onclick = toggleAudio;
     </script>
 </body>
 </html>
